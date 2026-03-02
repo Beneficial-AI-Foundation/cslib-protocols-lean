@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 140" width="520" height="140">
+  <defs>
+    <linearGradient id="gText" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4FFFB0" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#00C9FF" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="nodeFill" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#111E2E"/>
+      <stop offset="100%" stop-color="#0A1520"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Green right-pointing arrow -->
+    <marker id="chR" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
+      <polygon points="0 0, 5 2.5, 0 5" fill="#4FFFB0"/>
+    </marker>
+    <!-- Blue left-pointing arrow (drawn right→left, marker-end) -->
+    <marker id="chB" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
+      <polygon points="0 0, 5 2.5, 0 5" fill="#00C9FF"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="520" height="140" rx="13" fill="#080E18"/>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- ICON: Two peer nodes + protocol arrows            -->
+  <!-- Scaled 1.32x, positioned 0.25cm left of CSLib    -->
+  <!-- Top aligned to CSLib cap-height - 0.05cm (~y=33) -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <g transform="scale(1.32) translate(-31, -13)">
+
+    <!-- Left peer — outer glow ring -->
+    <circle cx="55" cy="62" r="24" fill="none" stroke="#4FFFB0" stroke-width="0.8" opacity="0.2"/>
+    <!-- Left peer — body -->
+    <circle cx="55" cy="62" r="17" fill="url(#nodeFill)" stroke="#4FFFB0" stroke-width="1.6" filter="url(#glow)"/>
+    <!-- Left peer arcs: ) shape -->
+    <path d="M 52 50 Q 64 62 52 74" fill="none" stroke="#4FFFB0" stroke-width="2" stroke-linecap="round" filter="url(#glow)"/>
+    <path d="M 48 55 Q 56 62 48 69" fill="none" stroke="#4FFFB0" stroke-width="1.1" stroke-linecap="round" opacity="0.4"/>
+
+    <!-- Right peer — outer glow ring -->
+    <circle cx="115" cy="62" r="24" fill="none" stroke="#00C9FF" stroke-width="0.8" opacity="0.2"/>
+    <!-- Right peer — body -->
+    <circle cx="115" cy="62" r="17" fill="url(#nodeFill)" stroke="#00C9FF" stroke-width="1.6" filter="url(#glow)"/>
+    <!-- Right peer arcs: ( shape -->
+    <path d="M 118 50 Q 106 62 118 74" fill="none" stroke="#00C9FF" stroke-width="2" stroke-linecap="round" filter="url(#glow)"/>
+    <path d="M 122 55 Q 114 62 122 69" fill="none" stroke="#00C9FF" stroke-width="1.1" stroke-linecap="round" opacity="0.4"/>
+
+    <!-- Arrow 3: left → right (green) -->
+    <line x1="74" y1="72" x2="94" y2="72" stroke="#4FFFB0" stroke-width="1.4" filter="url(#glow)" opacity="0.95"/>
+
+  </g>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- PROTOCOL ARROWS — drawn in screen space           -->
+  <!-- (outside scaled group to ensure markers render)  -->
+  <!-- screen_x = 1.32*(local_x - 31), y = 1.32*(local_y - 13) -->
+  <!-- ══════════════════════════════════════════════════ -->
+
+  <!-- Arrow 1: left → right (green), screen y≈51.5 -->
+  <line x1="57" y1="51" x2="80" y2="51" stroke="#4FFFB0" stroke-width="0.7" marker-end="url(#chR)" filter="url(#glow)" opacity="0.95"/>
+  <!-- Arrow 2: right → left (blue), screen y≈64.7 -->
+  <line x1="86" y1="65" x2="63" y2="65" stroke="#00C9FF" stroke-width="0.7" marker-end="url(#chB)" filter="url(#glow)" opacity="0.95"/>
+  <!-- Arrow 3: left → right (green), screen y≈77.9 -->
+  <line x1="57" y1="78" x2="80" y2="78" stroke="#4FFFB0" stroke-width="0.7" marker-end="url(#chR)" filter="url(#glow)" opacity="0.95"/>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- WORDMARK                                          -->
+  <!-- ══════════════════════════════════════════════════ -->
+
+  <!-- CSLib -->
+  <text x="152" y="62"
+        font-family="'JetBrains Mono', 'Courier New', monospace"
+        font-weight="700"
+        font-size="38"
+        fill="#FFFFFF"
+        letter-spacing="1">CSLib</text>
+
+  <!-- Separator bar -->
+  <rect x="152" y="71" width="184" height="1.5" rx="1" fill="url(#gText)" opacity="0.6"/>
+
+  <!-- L∃∀N™ — right-aligned to end of bar (x=336) -->
+  <g transform="translate(336, 57)">
+    <text text-anchor="end"
+          font-family="'Arial Black', 'Helvetica Neue', Arial, sans-serif"
+          font-weight="900"
+          font-size="17"
+          fill="#1B4F8A"
+          letter-spacing="0">L∃∀N</text>
+    <text x="2" y="-5"
+          font-family="'Arial', sans-serif"
+          font-weight="400"
+          font-size="7"
+          fill="#1B4F8A">™</text>
+  </g>
+
+  <!-- PROTOCOLS -->
+  <text x="152" y="97"
+        font-family="'JetBrains Mono', 'Courier New', monospace"
+        font-weight="400"
+        font-size="17"
+        fill="url(#gText)"
+        letter-spacing="5.5">PROTOCOLS</text>
+
+</svg>
