@@ -7,8 +7,7 @@ Authors: Christiano Braga
 module
 
 public import Mathlib.Tactic
-public import Cslib.Algorithms.Cryptography.ExpQ
-public import Cslib.Systems.Distributed.Protocols.Cryptographic.Sigma
+public import Cslib.Systems.Distributed.Protocols.Cryptographic.Sigma.Basic
 
 @[expose] public section
 
@@ -29,11 +28,47 @@ The protocol proceeds as in a sigma protocol, as follows:
 
 Reference:
 
-* [D. Boneh and V. Shoup,V., *A Graduate Course in Applied Cryptography*, One-time pad][BonehShoup],
-  Section 19.1.
+* [D. Boneh and V. Shoup,V., *A Graduate Course in Applied Cryptography*,
+  Schnorr Identification Protocol][BonehShoup], Section 19.1.
 -/
 
-open Cslib.Algorithms.Cryptography.ExpQ
+section SchnorrHelpers
+
+variable {G : Type u} [CommGroup G] {q : ℕ} [Fact q.Prime]
+variable (hG : ∀ x : G, x ^ q = 1)
+include hG
+
+/-
+pow_mod_q — Exponents can be reduced mod q.
+Uses the division algorithm: n = q · (n / q) + (n mod q), then hG to collapse (x^q)^(n/q) to 1.
+-/
+omit [Fact q.Prime] in
+private lemma pow_mod_q (y : G) (n : ℕ) : y ^ (n % q) = y ^ n := by
+  conv_rhs => rw [← Nat.div_add_mod n q]
+  rw [pow_add, pow_mul, hG y, one_pow, one_mul]
+
+/-
+pow_val_mul — Multiplication in ℤ/qℤ corresponds to iterated exponentiation.
+Combines ZMod.val_mul with pow_mod_q and pow_mul.
+-/
+omit [Fact q.Prime] in
+private lemma pow_val_mul (y : G) (a b : ZMod q) :
+    y ^ (a * b).val = (y ^ a.val) ^ b.val := by
+  rw [ZMod.val_mul, pow_mod_q hG, pow_mul]
+
+/-
+pow_val_sub — Subtraction in ℤ/qℤ corresponds to division in G.
+Shows y^(a-b) · y^b = y^a via ZMod.val_add and sub_add_cancel,
+then concludes by dividing both sides by y^b.
+-/
+private lemma pow_val_sub (y : G) (a b : ZMod q) :
+    y ^ (a - b).val = y ^ a.val * (y ^ b.val)⁻¹ := by
+  have h : y ^ (a - b).val * y ^ b.val = y ^ a.val := by
+    rw [← pow_add, ← pow_mod_q hG y ((a - b).val + b.val)]
+    congr 1; rw [← ZMod.val_add, sub_add_cancel]
+  exact eq_mul_inv_of_mul_eq h
+
+end SchnorrHelpers
 
 instance SchnorrProtocol {G : Type u} [CommGroup G] (g : G) (q : ℕ) [Fact q.Prime]
     (hG : ∀ x : G, x ^ q = 1) :
@@ -49,7 +84,7 @@ instance SchnorrProtocol {G : Type u} [CommGroup G] (g : G) (q : ℕ) [Fact q.Pr
     have hval : (w.1 + e * w.2).val = (w.1.val + e.val * w.2.val) % q := by
       simp [ZMod.val_add, ZMod.val_mul, Nat.add_mod,
           Nat.mod_eq_of_lt (Nat.mod_lt _ (Nat.Prime.pos (Fact.out)))]
-    rw [hval, pow_mod_eq hG, pow_add, mul_comm e.val w.2.val, pow_mul]
+    rw [hval, pow_mod_q hG, pow_add, mul_comm e.val w.2.val, pow_mul]
   sound := by
     intro x a e e' z z' hne hv hv'
     simp only
