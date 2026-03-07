@@ -193,6 +193,64 @@ Chapters 2–4 are formalized with definitions, adversary models, and security
 notions. Chapters 5–23 have scaffolding (structures for MACs, CRH, PKE,
 signatures) with TODO items for future formalization.
 
+## What has not been implemented yet
+
+Below is a chapter-by-chapter list of what remains unformalized, grouped by
+the reason it is not yet implemented.
+
+### Chapters with partial formalization (2–4)
+
+| Chapter | Missing content | Reason |
+|---------|----------------|--------|
+| **Ch. 2** (Encryption) | Probabilistic encryption (Section 2.2.1 general case) | Our ciphers are deterministic (`E : K → M → C`). Probabilistic encryption requires a `PMF` monad or explicit randomness type not yet integrated. |
+| **Ch. 2** (Encryption) | Multi-key semantic security (Attack Game 2.4) | Requires a stateful, multi-query adversary model we have not built. |
+| **Ch. 3** (Stream ciphers) | Security proof: PRG security ⟹ stream cipher semantic security (Theorem 3.1) | Requires connecting PRG advantage to SS advantage via a reduction argument; the counting-based probability framework does not yet support hybrid arguments. |
+| **Ch. 3** (Stream ciphers) | Composition theorems for PRGs (Sections 3.4–3.5) | Parallel and sequential composition need multi-step game-hopping proofs. |
+| **Ch. 4** (Block ciphers) | PRP/PRF switching lemma (Theorem 4.4) | Requires a birthday-bound probability argument not yet formalized. |
+| **Ch. 4** (Block ciphers) | Concrete block cipher constructions (AES, DES) | Out of scope: these are implementation-level algorithms, not definitional. |
+
+### Chapters with scaffolding only (5–9: secret-key constructions)
+
+| Chapter | File | What exists | What is missing | Reason |
+|---------|------|-------------|-----------------|--------|
+| **Ch. 5** (CPA security) | `SecretKey/CPA.lean` | Empty scaffolding | CPA attack game, CPA-secure encryption, randomized counter mode, CBC mode | CPA requires a *stateful, multi-query* adversary that makes encryption oracle queries. Our current adversary model is single-query. Building an oracle/interaction framework is a prerequisite. |
+| **Ch. 6** (MACs) | `SecretKey/MAC/Basic.lean` | `MACFamily` structure with `sign`, `verify`, `correct` | MAC security game (existential forgery), PRF-based MACs, CBC-MAC, CMAC, PMAC | The forgery game requires a multi-query signing oracle. Same oracle framework blocker as Ch. 5. |
+| **Ch. 7** (UHFs) | `SecretKey/UHF.lean` | Empty scaffolding | Universal hash families, ε-almost universal, UHF-based MACs, poly hash | Definitions are straightforward but depend on Ch. 6 MAC security to be useful. |
+| **Ch. 8** (CRH) | `SecretKey/CRH.lean` | `CRHFamily` structure with `hash`, `compressing` | Collision resistance game, birthday attack bound, Merkle-Damgård, Davies-Meyer, HMAC, sponge, Merkle trees, random oracle model | The collision game itself is simple, but the birthday bound requires combinatorial probability arguments not yet available in Mathlib. |
+| **Ch. 9** (Auth. encryption) | `SecretKey/AE.lean` | Empty scaffolding | AE definitions, encrypt-then-MAC, GCM, CCM | Depends on both CPA security (Ch. 5) and MAC security (Ch. 6). |
+
+### Chapters with scaffolding only (10–17: public-key cryptography)
+
+| Chapter | File | What is missing | Reason |
+|---------|------|-----------------|--------|
+| **Ch. 10** (Number-theoretic tools) | `PublicKey/Tools.lean` | Cyclic groups, discrete log, CDH, DDH assumptions, generic group model | Mathlib has `ZMod`, `IsCyclic`, and group theory, but connecting these to cryptographic hardness assumptions (as computational problems indexed by security parameter) requires careful design. |
+| **Ch. 11–12** (Public-key encryption) | `PublicKey/Encryption.lean` | `PKEFamily` structure exists but no security games; ElGamal, Cramer-Shoup, hybrid encryption, RSA-OAEP all missing | Requires Ch. 10 algebraic infrastructure plus CPA/CCA security games with decryption oracles. |
+| **Ch. 13–14** (Digital signatures) | `PublicKey/Signature.lean` | `SignatureFamily` structure exists but no security games; Schnorr, RSA-FDH, hash-and-sign, certificates all missing | Requires Ch. 10 group infrastructure and a multi-query signing oracle for existential unforgeability. |
+| **Ch. 15** (Elliptic curves) | `PublicKey/EllipticCurve.lean` | EC group law, pairings, BLS signatures | Mathlib has `EllipticCurve` but connecting it to the cryptographic abstraction layer (as a source of cyclic groups for Ch. 10) is non-trivial. |
+| **Ch. 16–17** (Lattices) | `PublicKey/Lattice.lean` | LWE, SIS, Ring-LWE, lattice-based encryption and signatures | Mathlib has basic lattice theory but lacks the specific worst-case/average-case reduction infrastructure needed for cryptographic lattice assumptions. |
+
+### Chapters with scaffolding only (18–23: protocols)
+
+| Chapter | File | What is missing | Reason |
+|---------|------|-----------------|--------|
+| **Ch. 18** (Identification) | `Protocols/Identification.lean` | ID schemes, Schnorr ID, Fiat-Shamir transform | Requires interactive protocol formalization (prover/verifier message exchange) and Ch. 10 group infrastructure. |
+| **Ch. 19–20** (ZK proofs) | `Protocols/ZeroKnowledge.lean` | ZK definitions (completeness, soundness, zero-knowledge), Sigma protocols, NIZKs | Requires a simulation-based security framework and interactive protocol model. This is one of the most complex formalizations in the book. |
+| **Ch. 21** (Key exchange) | `Protocols/KeyExchange.lean` | Diffie-Hellman, authenticated key exchange, TLS | Requires Ch. 10 group infrastructure, session-based security model with active adversaries. |
+| **Ch. 22** (Threshold crypto) | `Protocols/Threshold.lean` | Secret sharing, threshold decryption/signatures, distributed key generation | Requires polynomial interpolation over finite fields (available in Mathlib) plus multi-party protocol model. |
+| **Ch. 23** (MPC) | `Protocols/MPC.lean` | Secure computation, garbled circuits, oblivious transfer, GMW protocol | Requires a simulation-based security framework for multi-party protocols — the most infrastructure-heavy formalization in the book. |
+
+### Summary of blocking dependencies
+
+The missing content clusters around four infrastructure gaps:
+
+1. **Multi-query oracle framework.** Chapters 5, 6, 9, 13–14 need adversaries that interact with oracles (encryption, signing, decryption) over multiple queries. Our current model supports only single-query adversaries.
+
+2. **Hybrid/reduction argument support.** Chapters 3, 4, 8 need game-hopping proofs and birthday-bound arguments. The counting-based probability framework does not yet support reasoning about sequences of games.
+
+3. **Algebraic infrastructure for cryptographic assumptions.** Chapters 10–15, 18, 21 need cyclic groups, discrete log, CDH/DDH as computational assumptions indexed by security parameter, connected to Mathlib's existing algebra.
+
+4. **Simulation-based security.** Chapters 19–20, 22–23 need ideal/real world simulation paradigms for interactive and multi-party protocols.
+
 ## Building
 
 ```bash
