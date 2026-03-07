@@ -6,8 +6,8 @@ Authors: Beneficial AI Foundation
 
 module
 
-public import Cslib.Crypto.Init
-public import Mathlib.Data.Fintype.Card
+public import Cslib.Crypto.SecretKey.BlockCipher.Basic
+public import Mathlib.Data.Fintype.Pi
 
 @[expose] public section
 
@@ -50,18 +50,20 @@ structure PRFFamily where
   /-- The range (output space) for security parameter `λ`. -/
   Range : ℕ → Type*
   /-- Key spaces are finite. -/
-  key_fintype : ∀ λ, Fintype (Key λ)
+  key_fintype : ∀ sp, Fintype (Key sp)
   /-- Domain spaces are finite. -/
-  domain_fintype : ∀ λ, Fintype (Domain λ)
+  domain_fintype : ∀ sp, Fintype (Domain sp)
   /-- Range spaces are finite. -/
-  range_fintype : ∀ λ, Fintype (Range λ)
+  range_fintype : ∀ sp, Fintype (Range sp)
+  /-- Domain spaces have decidable equality. -/
+  domain_deceq : ∀ sp, DecidableEq (Domain sp)
   /-- Key spaces are nonempty. -/
-  key_nonempty : ∀ λ, Nonempty (Key λ)
+  key_nonempty : ∀ sp, Nonempty (Key sp)
   /-- The PRF evaluation function `F(k, x)`. -/
-  eval : ∀ λ, Key λ → Domain λ → Range λ
+  eval : ∀ sp, Key sp → Domain sp → Range sp
 
 attribute [instance] PRFFamily.key_fintype PRFFamily.domain_fintype
-  PRFFamily.range_fintype PRFFamily.key_nonempty
+  PRFFamily.range_fintype PRFFamily.key_nonempty PRFFamily.domain_deceq
 
 /--
 A **PRF adversary** gets oracle access to either `F(k, ·)` for random `k` or a truly random
@@ -71,7 +73,7 @@ We model the adversary as receiving the function and outputting a bit.
 -/
 structure PRFAdversary (F : PRFFamily) where
   /-- Given oracle access (modeled as a function), output a guess bit. -/
-  distinguish : ∀ λ, (F.Domain λ → F.Range λ) → Bool
+  distinguish : ∀ sp, (F.Domain sp → F.Range sp) → Bool
 
 /--
 The **PRF advantage** of adversary `A` against PRF `F`:
@@ -80,14 +82,13 @@ The **PRF advantage** of adversary `A` against PRF `F`:
 
 where `k ←$ Key` and `f ←$ Funs(Domain, Range)`.
 -/
-noncomputable def PRFAdvantage (F : PRFFamily) (A : PRFAdversary F) (λ : ℕ) : ℝ :=
+noncomputable def PRFAdvantage (F : PRFFamily) (A : PRFAdversary F) (sp : ℕ) : ℝ :=
   let prReal :=
-    (Finset.univ.filter fun (k : F.Key λ) =>
-      A.distinguish λ (F.eval λ k) = true).card / (Fintype.card (F.Key λ) : ℝ)
-  let totalFuns := (Fintype.card (F.Range λ)) ^ (Fintype.card (F.Domain λ))
+    (Finset.univ.filter fun (k : F.Key sp) =>
+      A.distinguish sp (F.eval sp k) = true).card / (Fintype.card (F.Key sp) : ℝ)
   let prIdeal :=
-    (Finset.univ.filter fun (f : F.Domain λ → F.Range λ) =>
-      A.distinguish λ f = true).card / (totalFuns : ℝ)
+    (Finset.univ.filter fun (f : F.Domain sp → F.Range sp) =>
+      A.distinguish sp f = true).card / (Fintype.card (F.Domain sp → F.Range sp) : ℝ)
   Advantage prReal prIdeal
 
 /--
@@ -95,7 +96,7 @@ A PRF family is **secure** if the PRF advantage is negligible for all adversarie
 (Section 4.4.1 in Boneh-Shoup)
 -/
 def PRFFamily.Secure (F : PRFFamily) : Prop :=
-  ∀ A : PRFAdversary F, Negligible (fun λ => PRFAdvantage F A λ)
+  ∀ A : PRFAdversary F, Negligible (fun sp => PRFAdvantage F A sp)
 
 /--
 Convert a block cipher family to a PRF family (since a block cipher `E(k, ·)` is in particular
@@ -108,7 +109,8 @@ def BlockCipherFamily.toPRFFamily (E : BlockCipherFamily) : PRFFamily where
   key_fintype := E.key_fintype
   domain_fintype := E.block_fintype
   range_fintype := E.block_fintype
+  domain_deceq := E.block_deceq
   key_nonempty := E.key_nonempty
-  eval λ k x := E.perm λ k x
+  eval sp k x := E.perm sp k x
 
 end Cslib.Crypto

@@ -43,19 +43,19 @@ structure MACFamily where
   /-- The tag space. -/
   Tag : ℕ → Type*
   /-- Key spaces are finite. -/
-  key_fintype : ∀ λ, Fintype (Key λ)
+  key_fintype : ∀ sp, Fintype (Key sp)
   /-- Message spaces are finite. -/
-  msg_fintype : ∀ λ, Fintype (Msg λ)
+  msg_fintype : ∀ sp, Fintype (Msg sp)
   /-- Tag spaces are finite. -/
-  tag_fintype : ∀ λ, Fintype (Tag λ)
+  tag_fintype : ∀ sp, Fintype (Tag sp)
   /-- Key spaces are nonempty. -/
-  key_nonempty : ∀ λ, Nonempty (Key λ)
+  key_nonempty : ∀ sp, Nonempty (Key sp)
   /-- The signing algorithm `S(k, m) → t`. -/
-  sign : ∀ λ, Key λ → Msg λ → Tag λ
+  sign : ∀ sp, Key sp → Msg sp → Tag sp
   /-- The verification algorithm `V(k, m, t) → {accept, reject}`. -/
-  verify : ∀ λ, Key λ → Msg λ → Tag λ → Bool
+  verify : ∀ sp, Key sp → Msg sp → Tag sp → Bool
   /-- Correctness: honestly generated tags always verify. -/
-  correct : ∀ λ k m, verify λ k m (sign λ k m) = true
+  correct : ∀ sp k m, verify sp k m (sign sp k m) = true
 
 attribute [instance] MACFamily.key_fintype MACFamily.msg_fintype
   MACFamily.tag_fintype MACFamily.key_nonempty

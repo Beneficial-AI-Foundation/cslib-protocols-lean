@@ -6,9 +6,9 @@ Authors: Beneficial AI Foundation
 
 module
 
-public import Cslib.Crypto.Init
-public import Mathlib.Data.Fintype.Card
+public import Cslib.Crypto.SecretKey.Encryption.ComputationalCipher
 public import Mathlib.GroupTheory.Perm.Basic
+public import Mathlib.Data.Fintype.Perm
 
 @[expose] public section
 
@@ -47,40 +47,42 @@ structure BlockCipherFamily where
   /-- The block space (= message space = ciphertext space) for security parameter `λ`. -/
   Block : ℕ → Type*
   /-- Key spaces are finite. -/
-  key_fintype : ∀ λ, Fintype (Key λ)
+  key_fintype : ∀ sp, Fintype (Key sp)
   /-- Block spaces are finite. -/
-  block_fintype : ∀ λ, Fintype (Block λ)
+  block_fintype : ∀ sp, Fintype (Block sp)
   /-- Key spaces are nonempty. -/
-  key_nonempty : ∀ λ, Nonempty (Key λ)
+  key_nonempty : ∀ sp, Nonempty (Key sp)
   /-- Block spaces are nonempty. -/
-  block_nonempty : ∀ λ, Nonempty (Block λ)
+  block_nonempty : ∀ sp, Nonempty (Block sp)
+  /-- Block spaces have decidable equality. -/
+  block_deceq : ∀ sp, DecidableEq (Block sp)
   /-- For each key, encryption is a permutation on the block space.
       We use Mathlib's `Equiv.Perm` to represent this. -/
-  perm : ∀ λ, Key λ → Equiv.Perm (Block λ)
+  perm : ∀ sp, Key sp → Equiv.Perm (Block sp)
 
 attribute [instance] BlockCipherFamily.key_fintype BlockCipherFamily.block_fintype
-  BlockCipherFamily.key_nonempty BlockCipherFamily.block_nonempty
+  BlockCipherFamily.key_nonempty BlockCipherFamily.block_nonempty BlockCipherFamily.block_deceq
 
 /--
 Extract the encryption function from a block cipher.
 -/
-def BlockCipherFamily.encrypt (E : BlockCipherFamily) (λ : ℕ) (k : E.Key λ) (x : E.Block λ) :
-    E.Block λ :=
-  E.perm λ k x
+def BlockCipherFamily.encrypt (E : BlockCipherFamily) (sp : ℕ) (k : E.Key sp) (x : E.Block sp) :
+    E.Block sp :=
+  E.perm sp k x
 
 /--
 Extract the decryption function from a block cipher.
 -/
-def BlockCipherFamily.decrypt (E : BlockCipherFamily) (λ : ℕ) (k : E.Key λ) (y : E.Block λ) :
-    E.Block λ :=
-  (E.perm λ k).symm y
+def BlockCipherFamily.decrypt (E : BlockCipherFamily) (sp : ℕ) (k : E.Key sp) (y : E.Block sp) :
+    E.Block sp :=
+  (E.perm sp k).symm y
 
 /--
 Block cipher correctness: decryption inverts encryption.
 -/
-theorem BlockCipherFamily.correct (E : BlockCipherFamily) (λ : ℕ) (k : E.Key λ)
-    (x : E.Block λ) : E.decrypt λ k (E.encrypt λ k x) = x :=
-  (E.perm λ k).symm_apply_apply x
+theorem BlockCipherFamily.correct (E : BlockCipherFamily) (sp : ℕ) (k : E.Key sp)
+    (x : E.Block sp) : E.decrypt sp k (E.encrypt sp k x) = x :=
+  (E.perm sp k).symm_apply_apply x
 
 /--
 Convert a `BlockCipherFamily` to a `CipherFamily`.
@@ -93,9 +95,9 @@ def BlockCipherFamily.toCipherFamily (E : BlockCipherFamily) : CipherFamily wher
   msg_fintype := E.block_fintype
   ctxt_fintype := E.block_fintype
   key_nonempty := E.key_nonempty
-  encrypt λ k m := E.encrypt λ k m
-  decrypt λ k c := E.decrypt λ k c
-  correct λ k m := E.correct λ k m
+  encrypt sp k m := E.encrypt sp k m
+  decrypt sp k c := E.decrypt sp k c
+  correct sp k m := E.correct sp k m
 
 /--
 A **block cipher adversary** (for the security game of Section 4.1) receives oracle access
@@ -104,7 +106,7 @@ and must distinguish the two cases.
 -/
 structure BCAdversary (E : BlockCipherFamily) where
   /-- Given oracle access (modeled as a permutation), output a guess bit. -/
-  distinguish : ∀ λ, Equiv.Perm (E.Block λ) → Bool
+  distinguish : ∀ sp, Equiv.Perm (E.Block sp) → Bool
 
 /--
 The **block cipher advantage** of adversary `A` against block cipher `E`:
@@ -113,13 +115,13 @@ The **block cipher advantage** of adversary `A` against block cipher `E`:
 
 where `k ←$ K` and `π ←$ Perms(X)`.
 -/
-noncomputable def BCAdvantage (E : BlockCipherFamily) (A : BCAdversary E) (λ : ℕ) : ℝ :=
+noncomputable def BCAdvantage (E : BlockCipherFamily) (A : BCAdversary E) (sp : ℕ) : ℝ :=
   let prReal :=
-    (Finset.univ.filter fun (k : E.Key λ) =>
-      A.distinguish λ (E.perm λ k) = true).card / (Fintype.card (E.Key λ) : ℝ)
+    (Finset.univ.filter fun (k : E.Key sp) =>
+      A.distinguish sp (E.perm sp k) = true).card / (Fintype.card (E.Key sp) : ℝ)
   let prIdeal :=
-    (Finset.univ.filter fun (π : Equiv.Perm (E.Block λ)) =>
-      A.distinguish λ π = true).card / (Fintype.card (Equiv.Perm (E.Block λ)) : ℝ)
+    (Finset.univ.filter fun (π : Equiv.Perm (E.Block sp)) =>
+      A.distinguish sp π = true).card / (Fintype.card (Equiv.Perm (E.Block sp)) : ℝ)
   Advantage prReal prIdeal
 
 /--
@@ -128,6 +130,6 @@ all adversaries.
 (Section 4.1 in Boneh-Shoup)
 -/
 def BlockCipherFamily.Secure (E : BlockCipherFamily) : Prop :=
-  ∀ A : BCAdversary E, Negligible (fun λ => BCAdvantage E A λ)
+  ∀ A : BCAdversary E, Negligible (fun sp => BCAdvantage E A sp)
 
 end Cslib.Crypto

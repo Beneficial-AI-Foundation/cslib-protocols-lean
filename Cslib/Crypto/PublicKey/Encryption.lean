@@ -45,22 +45,22 @@ structure PKEFamily where
   /-- The ciphertext space. -/
   Ctxt : ℕ → Type*
   /-- Public key types are finite. -/
-  pk_fintype : ∀ λ, Fintype (PK λ)
+  pk_fintype : ∀ sp, Fintype (PK sp)
   /-- Secret key types are finite. -/
-  sk_fintype : ∀ λ, Fintype (SK λ)
+  sk_fintype : ∀ sp, Fintype (SK sp)
   /-- Message spaces are finite. -/
-  msg_fintype : ∀ λ, Fintype (Msg λ)
+  msg_fintype : ∀ sp, Fintype (Msg sp)
   /-- Ciphertext spaces are finite. -/
-  ctxt_fintype : ∀ λ, Fintype (Ctxt λ)
+  ctxt_fintype : ∀ sp, Fintype (Ctxt sp)
   /-- Key generation: produces a (pk, sk) pair. Modeled deterministically here;
       probabilistic key generation can be modeled as choosing from a `PMF`. -/
-  keygen : ∀ λ, PK λ × SK λ
+  keygen : ∀ sp, PK sp × SK sp
   /-- Encryption: `E(pk, m) → c`. Deterministic model; see note on keygen. -/
-  encrypt : ∀ λ, PK λ → Msg λ → Ctxt λ
+  encrypt : ∀ sp, PK sp → Msg sp → Ctxt sp
   /-- Decryption: `D(sk, c) → m`. -/
-  decrypt : ∀ λ, SK λ → Ctxt λ → Msg λ
+  decrypt : ∀ sp, SK sp → Ctxt sp → Msg sp
   /-- Correctness: decryption undoes encryption using the matching key pair. -/
-  correct : ∀ λ m, let ⟨pk, sk⟩ := keygen λ; decrypt λ sk (encrypt λ pk m) = m
+  correct : ∀ sp m, let ⟨pk, sk⟩ := keygen sp; decrypt sp sk (encrypt sp pk m) = m
 
 -- TODO: Formalize PKE semantic security (Section 11.2)
 -- TODO: Formalize ElGamal encryption (Section 11.5)

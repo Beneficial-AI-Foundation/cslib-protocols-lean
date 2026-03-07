@@ -81,7 +81,7 @@ theorem advantage_eq_two_mul_bitGuessing (p₀ p₁ : ℝ) :
   unfold Advantage BitGuessingAdvantage
   rw [show (1 - p₀ + p₁) / 2 - 1 / 2 = (p₁ - p₀) / 2 by ring]
   rw [abs_div, show |(2 : ℝ)| = 2 from abs_of_pos two_pos]
-  ring_nf
   rw [show p₀ - p₁ = -(p₁ - p₀) by ring, abs_neg]
+  ring
 
 end Cslib.Crypto

@@ -58,9 +58,9 @@ We model the adversary as two functions:
 -/
 structure SSAdversary (E : CipherFamily) where
   /-- The adversary's first phase: choose two challenge messages. -/
-  chooseMessages : ∀ λ, E.Msg λ × E.Msg λ
+  chooseMessages : ∀ sp, E.Msg sp × E.Msg sp
   /-- The adversary's second phase: given a ciphertext, output a guess bit. -/
-  distinguish : ∀ λ, E.Ctxt λ → Bool
+  distinguish : ∀ sp, E.Ctxt sp → Bool
 
 /--
 The probability that adversary `A` outputs `true` (i.e., guesses `b̂ = 1`) in Experiment `b`
@@ -68,12 +68,12 @@ of Attack Game 2.1, over the uniform choice of key `k`.
 
 `Pr[Wᵦ] = |{k ∈ K : A.distinguish(E(k, mᵦ)) = true}| / |K|`
 -/
-noncomputable def SSExperimentProb [∀ λ, DecidableEq (E.Ctxt λ)]
-    (E : CipherFamily) (A : SSAdversary E) (λ : ℕ) (b : Bool) : ℝ :=
-  let msgs := A.chooseMessages λ
+noncomputable def SSExperimentProb
+    (E : CipherFamily) (A : SSAdversary E) (sp : ℕ) (b : Bool) : ℝ :=
+  let msgs := A.chooseMessages sp
   let m := if b then msgs.2 else msgs.1
-  (Finset.univ.filter fun (k : E.Key λ) =>
-    A.distinguish λ (E.encrypt λ k m) = true).card / (Fintype.card (E.Key λ) : ℝ)
+  (Finset.univ.filter fun (k : E.Key sp) =>
+    A.distinguish sp (E.encrypt sp k m) = true).card / (Fintype.card (E.Key sp) : ℝ)
 
 /--
 The **semantic security advantage** of adversary `A` against cipher family `E` at security
@@ -84,17 +84,17 @@ parameter `λ`:
 where `Wᵦ` is the event that `A` outputs 1 in Experiment `b` of Attack Game 2.1.
 (Section 2.2.2 / Attack Game 2.1)
 -/
-noncomputable def SSAdvantage [∀ λ, DecidableEq (E.Ctxt λ)]
-    (E : CipherFamily) (A : SSAdversary E) (λ : ℕ) : ℝ :=
-  Advantage (SSExperimentProb E A λ false) (SSExperimentProb E A λ true)
+noncomputable def SSAdvantage
+    (E : CipherFamily) (A : SSAdversary E) (sp : ℕ) : ℝ :=
+  Advantage (SSExperimentProb E A sp false) (SSExperimentProb E A sp true)
 
 /--
 A cipher family is **semantically secure** if for all adversaries, the function
 `λ ↦ SSadv[A, E](λ)` is negligible.
 (Definition 2.2 in Boneh-Shoup)
 -/
-def CipherFamily.SemanticallySecure [∀ λ, DecidableEq (E.Ctxt λ)] (E : CipherFamily) : Prop :=
-  ∀ A : SSAdversary E, Negligible (fun λ => SSAdvantage E A λ)
+def CipherFamily.SemanticallySecure (E : CipherFamily) : Prop :=
+  ∀ A : SSAdversary E, Negligible (fun sp => SSAdvantage E A sp)
 
 /--
 The **bit-guessing SS advantage** of adversary `A` against cipher `E` at security parameter `λ`:
@@ -103,18 +103,18 @@ The **bit-guessing SS advantage** of adversary `A` against cipher `E` at securit
 
 in the single-experiment version (Attack Game 2.4).
 -/
-noncomputable def SSBitGuessingAdvantage [∀ λ, DecidableEq (E.Ctxt λ)]
-    (E : CipherFamily) (A : SSAdversary E) (λ : ℕ) : ℝ :=
+noncomputable def SSBitGuessingAdvantage
+    (E : CipherFamily) (A : SSAdversary E) (sp : ℕ) : ℝ :=
   BitGuessingAdvantage
-    ((1 - SSExperimentProb E A λ false + SSExperimentProb E A λ true) / 2)
+    ((1 - SSExperimentProb E A sp false + SSExperimentProb E A sp true) / 2)
 
 /--
 `SSadv[A, E] = 2 · SSadv*[A, E]` for every adversary `A` and cipher family `E`.
 (Theorem 2.10 in Boneh-Shoup)
 -/
-theorem SSAdvantage_eq_two_mul_bitGuessing [∀ λ, DecidableEq (E.Ctxt λ)]
-    (E : CipherFamily) (A : SSAdversary E) (λ : ℕ) :
-    SSAdvantage E A λ = 2 * SSBitGuessingAdvantage E A λ := by
+theorem SSAdvantage_eq_two_mul_bitGuessing
+    (E : CipherFamily) (A : SSAdversary E) (sp : ℕ) :
+    SSAdvantage E A sp = 2 * SSBitGuessingAdvantage E A sp := by
   unfold SSAdvantage SSBitGuessingAdvantage
   exact advantage_eq_two_mul_bitGuessing _ _
 
@@ -127,7 +127,7 @@ and the adversary outputs a guess `m̂`.
 -/
 structure MRAdversary (E : CipherFamily) where
   /-- Given a ciphertext, output a guess for the underlying message. -/
-  recover : ∀ λ, E.Ctxt λ → E.Msg λ
+  recover : ∀ sp, E.Ctxt sp → E.Msg sp
 
 /--
 The **message recovery advantage** of adversary `A` against cipher `E`:
@@ -136,12 +136,13 @@ The **message recovery advantage** of adversary `A` against cipher `E`:
 
 (Attack Game 2.2 in Boneh-Shoup)
 -/
-noncomputable def MRAdvantage [∀ λ, DecidableEq (E.Msg λ)] [∀ λ, DecidableEq (E.Ctxt λ)]
-    (E : CipherFamily) (A : MRAdversary E) (λ : ℕ) : ℝ :=
-  let numCorrect := (Finset.univ (α := E.Key λ ×ₗ E.Msg λ)).filter
-    (fun ⟨k, m⟩ => A.recover λ (E.encrypt λ k m) = m) |>.card
-  let total := Fintype.card (E.Key λ) * Fintype.card (E.Msg λ)
-  |((numCorrect : ℝ) / total) - (1 / Fintype.card (E.Msg λ))|
+noncomputable def MRAdvantage
+    (E : CipherFamily) [∀ sp, DecidableEq (E.Msg sp)]
+    (A : MRAdversary E) (sp : ℕ) : ℝ :=
+  let numCorrect := (Finset.univ (α := E.Key sp × E.Msg sp)).filter
+    (fun ⟨k, m⟩ => A.recover sp (E.encrypt sp k m) = m) |>.card
+  let total := Fintype.card (E.Key sp) * Fintype.card (E.Msg sp)
+  |((numCorrect : ℝ) / total) - (1 / Fintype.card (E.Msg sp))|
 
 /--
 If a cipher is semantically secure, then it is secure against message recovery:
@@ -150,9 +151,9 @@ around `A`) such that `MRadv[A, E] ≤ SSadv[B, E]`.
 (Theorem 2.7 in Boneh-Shoup)
 -/
 theorem SemanticallySecure.secure_against_message_recovery
-    [∀ λ, DecidableEq (E.Msg λ)] [∀ λ, DecidableEq (E.Ctxt λ)]
-    (E : CipherFamily) (hss : E.SemanticallySecure) :
-    ∀ A : MRAdversary E, Negligible (fun λ => MRAdvantage E A λ) := by
+    (E : CipherFamily) [∀ sp, DecidableEq (E.Msg sp)]
+    (_hss : E.SemanticallySecure) :
+    ∀ A : MRAdversary E, Negligible (fun sp => MRAdvantage E A sp) := by
   sorry
 
 end MessageRecovery

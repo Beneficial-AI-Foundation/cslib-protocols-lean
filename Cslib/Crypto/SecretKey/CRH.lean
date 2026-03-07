@@ -41,17 +41,17 @@ structure CRHFamily where
   /-- The digest space (range), which must be smaller than the message space. -/
   Digest : ℕ → Type*
   /-- Key spaces are finite. -/
-  key_fintype : ∀ λ, Fintype (Key λ)
+  key_fintype : ∀ sp, Fintype (Key sp)
   /-- Message spaces are finite. -/
-  msg_fintype : ∀ λ, Fintype (Msg λ)
+  msg_fintype : ∀ sp, Fintype (Msg sp)
   /-- Digest spaces are finite. -/
-  digest_fintype : ∀ λ, Fintype (Digest λ)
+  digest_fintype : ∀ sp, Fintype (Digest sp)
   /-- Key spaces are nonempty. -/
-  key_nonempty : ∀ λ, Nonempty (Key λ)
+  key_nonempty : ∀ sp, Nonempty (Key sp)
   /-- The hash function `H(k, m) → d`. -/
-  hash : ∀ λ, Key λ → Msg λ → Digest λ
+  hash : ∀ sp, Key sp → Msg sp → Digest sp
   /-- The hash is compressing: digest space is smaller than message space. -/
-  compressing : ∀ λ, Fintype.card (Digest λ) < Fintype.card (Msg λ)
+  compressing : ∀ sp, Fintype.card (Digest sp) < Fintype.card (Msg sp)
 
 attribute [instance] CRHFamily.key_fintype CRHFamily.msg_fintype
   CRHFamily.digest_fintype CRHFamily.key_nonempty

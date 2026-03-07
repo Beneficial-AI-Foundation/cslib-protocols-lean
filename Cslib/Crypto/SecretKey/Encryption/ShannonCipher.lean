@@ -9,7 +9,7 @@ module
 public import Cslib.Crypto.Init
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Probability.ProbabilityMassFunction.Basic
-public import Mathlib.Data.BitVec.Lemmas
+public import Mathlib.Data.BitVec
 
 @[expose] public section
 
@@ -64,6 +64,9 @@ structure ShannonCipher (Key Msg Ctxt : Type*) where
 
 variable {Key Msg Ctxt : Type*}
 
+instance BitVec.instFintype : Fintype (BitVec n) :=
+  Fintype.ofEquiv (Fin (2^n)) ⟨BitVec.ofFin, BitVec.toFin, BitVec.toFin_ofFin, BitVec.ofFin_toFin⟩
+
 /--
 A Shannon cipher is **perfectly secure** if for all messages `m₀, m₁` and all ciphertexts `c`,
 the number of keys that encrypt `m₀` to `c` equals the number of keys that encrypt `m₁` to `c`.
@@ -99,7 +102,7 @@ are all `BitVec n`, encryption is XOR, and decryption is also XOR.
 def otp (n : ℕ) : ShannonCipher (BitVec n) (BitVec n) (BitVec n) where
   encrypt k m := k ^^^ m
   decrypt k c := k ^^^ c
-  correct k m := by simp [BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
+  correct k m := by rw [← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
 
 /--
 The one-time pad is perfectly secure.

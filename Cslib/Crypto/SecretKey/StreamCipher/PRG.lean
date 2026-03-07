@@ -6,9 +6,8 @@ Authors: Beneficial AI Foundation
 
 module
 
-public import Cslib.Crypto.Init
+public import Cslib.Crypto.SecretKey.Encryption.ShannonCipher
 public import Mathlib.Data.Fintype.Card
-public import Mathlib.Probability.ProbabilityMassFunction.Basic
 
 @[expose] public section
 
@@ -52,17 +51,17 @@ structure PRGFamily where
   /-- The output space for security parameter `λ`. -/
   Output : ℕ → Type*
   /-- Seed spaces are finite. -/
-  seed_fintype : ∀ λ, Fintype (Seed λ)
+  seed_fintype : ∀ sp, Fintype (Seed sp)
   /-- Output spaces are finite. -/
-  output_fintype : ∀ λ, Fintype (Output λ)
+  output_fintype : ∀ sp, Fintype (Output sp)
   /-- Seed spaces are nonempty. -/
-  seed_nonempty : ∀ λ, Nonempty (Seed λ)
+  seed_nonempty : ∀ sp, Nonempty (Seed sp)
   /-- Output spaces are nonempty. -/
-  output_nonempty : ∀ λ, Nonempty (Output λ)
+  output_nonempty : ∀ sp, Nonempty (Output sp)
   /-- The generator function `G : Seed → Output`. -/
-  generate : ∀ λ, Seed λ → Output λ
+  generate : ∀ sp, Seed sp → Output sp
   /-- The output is strictly longer than the seed (expansion). -/
-  expansion : ∀ λ, Fintype.card (Seed λ) < Fintype.card (Output λ)
+  expansion : ∀ sp, Fintype.card (Seed sp) < Fintype.card (Output sp)
 
 attribute [instance] PRGFamily.seed_fintype PRGFamily.output_fintype
   PRGFamily.seed_nonempty PRGFamily.output_nonempty
@@ -73,7 +72,7 @@ takes an element of the output space and outputs a bit.
 -/
 structure PRGAdversary (G : PRGFamily) where
   /-- Given an element of the output space, output `true` or `false`. -/
-  distinguish : ∀ λ, G.Output λ → Bool
+  distinguish : ∀ sp, G.Output sp → Bool
 
 /--
 The **PRG advantage** of adversary `A` against PRG `G` at security parameter `λ`:
@@ -83,26 +82,24 @@ The **PRG advantage** of adversary `A` against PRG `G` at security parameter `λ
 where `s ←$ Seed` and `r ←$ Output`.
 (Attack Game 3.1 in Boneh-Shoup)
 -/
-noncomputable def PRGAdvantage [∀ λ, DecidableEq (G.Output λ)]
-    (G : PRGFamily) (A : PRGAdversary G) (λ : ℕ) : ℝ :=
+noncomputable def PRGAdvantage
+    (G : PRGFamily) (A : PRGAdversary G) (sp : ℕ) : ℝ :=
   let prReal :=
-    (Finset.univ.filter fun (s : G.Seed λ) =>
-      A.distinguish λ (G.generate λ s) = true).card / (Fintype.card (G.Seed λ) : ℝ)
+    (Finset.univ.filter fun (s : G.Seed sp) =>
+      A.distinguish sp (G.generate sp s) = true).card / (Fintype.card (G.Seed sp) : ℝ)
   let prRandom :=
-    (Finset.univ.filter fun (r : G.Output λ) =>
-      A.distinguish λ r = true).card / (Fintype.card (G.Output λ) : ℝ)
+    (Finset.univ.filter fun (r : G.Output sp) =>
+      A.distinguish sp r = true).card / (Fintype.card (G.Output sp) : ℝ)
   Advantage prReal prRandom
 
 /--
 A PRG family is **secure** if for all adversaries, the PRG advantage is negligible.
 (Definition 3.1 in Boneh-Shoup)
 -/
-def PRGFamily.Secure [∀ λ, DecidableEq (G.Output λ)] (G : PRGFamily) : Prop :=
-  ∀ A : PRGAdversary G, Negligible (fun λ => PRGAdvantage G A λ)
+def PRGFamily.Secure (G : PRGFamily) : Prop :=
+  ∀ A : PRGAdversary G, Negligible (fun sp => PRGAdvantage G A sp)
 
 section StreamCipher
-
-variable {n : ℕ → ℕ}
 
 /--
 A **stream cipher** built from a PRG, where encryption XORs the PRG output with the message.
@@ -114,7 +111,7 @@ def streamCipher (seedLen msgLen : ℕ) (G : BitVec seedLen → BitVec msgLen) :
     ShannonCipher (BitVec seedLen) (BitVec msgLen) (BitVec msgLen) where
   encrypt k m := G k ^^^ m
   decrypt k c := G k ^^^ c
-  correct k m := by simp [BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
+  correct k m := by rw [← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
 
 end StreamCipher
 

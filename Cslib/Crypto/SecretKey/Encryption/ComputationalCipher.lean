@@ -6,9 +6,7 @@ Authors: Beneficial AI Foundation
 
 module
 
-public import Cslib.Crypto.Init
-public import Mathlib.Data.Fintype.Card
-public import Mathlib.Probability.ProbabilityMassFunction.Basic
+public import Cslib.Crypto.SecretKey.Encryption.ShannonCipher
 
 @[expose] public section
 
@@ -70,19 +68,19 @@ structure CipherFamily where
   /-- The ciphertext space for security parameter `λ`. -/
   Ctxt : ℕ → Type*
   /-- Key spaces are finite. -/
-  key_fintype : ∀ λ, Fintype (Key λ)
+  key_fintype : ∀ sp, Fintype (Key sp)
   /-- Message spaces are finite. -/
-  msg_fintype : ∀ λ, Fintype (Msg λ)
+  msg_fintype : ∀ sp, Fintype (Msg sp)
   /-- Ciphertext spaces are finite. -/
-  ctxt_fintype : ∀ λ, Fintype (Ctxt λ)
+  ctxt_fintype : ∀ sp, Fintype (Ctxt sp)
   /-- Key spaces are nonempty (we can always sample a key). -/
-  key_nonempty : ∀ λ, Nonempty (Key λ)
+  key_nonempty : ∀ sp, Nonempty (Key sp)
   /-- The encryption algorithm. -/
-  encrypt : ∀ λ, Key λ → Msg λ → Ctxt λ
+  encrypt : ∀ sp, Key sp → Msg sp → Ctxt sp
   /-- The decryption algorithm. -/
-  decrypt : ∀ λ, Key λ → Ctxt λ → Msg λ
+  decrypt : ∀ sp, Key sp → Ctxt sp → Msg sp
   /-- Correctness: for all `λ`, `k`, `m`, `D(k, E(k, m)) = m`. -/
-  correct : ∀ λ k m, decrypt λ k (encrypt λ k m) = m
+  correct : ∀ sp k m, decrypt sp k (encrypt sp k m) = m
 
 attribute [instance] CipherFamily.key_fintype CipherFamily.msg_fintype
   CipherFamily.ctxt_fintype CipherFamily.key_nonempty
@@ -90,9 +88,9 @@ attribute [instance] CipherFamily.key_fintype CipherFamily.msg_fintype
 /--
 Extract a single cipher instance from a cipher family at a given security parameter.
 -/
-def CipherFamily.at (E : CipherFamily) (λ : ℕ) : Cipher (E.Key λ) (E.Msg λ) (E.Ctxt λ) where
-  encrypt := E.encrypt λ
-  decrypt := E.decrypt λ
-  correct := E.correct λ
+def CipherFamily.at (E : CipherFamily) (sp : ℕ) : Cipher (E.Key sp) (E.Msg sp) (E.Ctxt sp) where
+  encrypt := E.encrypt sp
+  decrypt := E.decrypt sp
+  correct := E.correct sp
 
 end Cslib.Crypto

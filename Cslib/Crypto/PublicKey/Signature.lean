@@ -45,21 +45,21 @@ structure SignatureFamily where
   /-- The signature space. -/
   Sig : ℕ → Type*
   /-- Verification key types are finite. -/
-  vk_fintype : ∀ λ, Fintype (VK λ)
+  vk_fintype : ∀ sp, Fintype (VK sp)
   /-- Signing key types are finite. -/
-  sk_fintype : ∀ λ, Fintype (SK λ)
+  sk_fintype : ∀ sp, Fintype (SK sp)
   /-- Message spaces are finite. -/
-  msg_fintype : ∀ λ, Fintype (Msg λ)
+  msg_fintype : ∀ sp, Fintype (Msg sp)
   /-- Signature spaces are finite. -/
-  sig_fintype : ∀ λ, Fintype (Sig λ)
+  sig_fintype : ∀ sp, Fintype (Sig sp)
   /-- Key generation: produces a (vk, sk) pair. -/
-  keygen : ∀ λ, VK λ × SK λ
+  keygen : ∀ sp, VK sp × SK sp
   /-- Signing: `Sign(sk, m) → σ`. -/
-  sign : ∀ λ, SK λ → Msg λ → Sig λ
+  sign : ∀ sp, SK sp → Msg sp → Sig sp
   /-- Verification: `Verify(vk, m, σ) → {accept, reject}`. -/
-  verify : ∀ λ, VK λ → Msg λ → Sig λ → Bool
+  verify : ∀ sp, VK sp → Msg sp → Sig sp → Bool
   /-- Correctness: honestly generated signatures always verify. -/
-  correct : ∀ λ m, let ⟨vk, sk⟩ := keygen λ; verify λ vk m (sign λ sk m) = true
+  correct : ∀ sp m, let ⟨vk, sk⟩ := keygen sp; verify sp vk m (sign sp sk m) = true
 
 -- TODO: Formalize EUF-CMA security (Section 13.1.1)
 -- TODO: Formalize full domain hash signatures (Section 13.3)

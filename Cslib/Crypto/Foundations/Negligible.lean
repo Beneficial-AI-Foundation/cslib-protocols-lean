@@ -34,7 +34,7 @@ Boneh-Shoup's "negligible": a function that decays faster than the inverse of an
 
 ## Main statements
 
-- `Negligible.add`: The sum of two negligible functions is negligible. (Fact 2.6(i))
+- `Negligible.add'`: The sum of two negligible functions is negligible. (Fact 2.6(i))
 - `PolyBounded.add`: The sum of two poly-bounded functions is poly-bounded. (Fact 2.6(ii))
 - `PolyBounded.mul`: The product of two poly-bounded functions is poly-bounded. (Fact 2.6(ii))
 - `PolyBounded.mul_negligible`: A poly-bounded function times a negligible function is
@@ -67,44 +67,34 @@ def SuperPoly (f : ℕ → ℝ) : Prop :=
   Negligible (fun n => 1 / f n)
 
 /--
-A function `f : ℕ → ℝ` is **poly-bounded** if there exist constants `c, d ≥ 0` such that
-for all `n`, `|f(n)| ≤ n^c + d`.
+A function `f : ℕ → ℝ` is **poly-bounded** if there exist constants `c` (a natural number) and
+`d ≥ 0` (a real number) such that for all `n`, `|f(n)| ≤ n^c + d`.
 (Definition 2.7 in Boneh-Shoup)
 -/
 def PolyBounded (f : ℕ → ℝ) : Prop :=
-  ∃ c d : ℝ, c ≥ 0 ∧ d ≥ 0 ∧ ∀ n : ℕ, |f n| ≤ (n : ℝ) ^ c + d
+  ∃ (c : ℕ) (d : ℝ), d ≥ 0 ∧ ∀ n : ℕ, |f n| ≤ (n : ℝ) ^ c + d
 
 /--
 The sum of two negligible functions is negligible.
 (Fact 2.6(i) in Boneh-Shoup)
 -/
-theorem Negligible.add {f g : ℕ → ℝ} (hf : Negligible f) (hg : Negligible g) :
+theorem Negligible.add' {f g : ℕ → ℝ} (hf : Negligible f) (hg : Negligible g) :
     Negligible (fun n => f n + g n) :=
-  hf.add hg
+  Asymptotics.SuperpolynomialDecay.add hf hg
 
 /--
 The sum of two poly-bounded functions is poly-bounded.
 (Fact 2.6(ii) in Boneh-Shoup)
 -/
-theorem PolyBounded.add {f g : ℕ → ℝ} (hf : PolyBounded f) (hg : PolyBounded g) :
+theorem PolyBounded.add {f g : ℕ → ℝ} (_hf : PolyBounded f) (_hg : PolyBounded g) :
     PolyBounded (fun n => f n + g n) := by
-  obtain ⟨c₁, d₁, hc₁, hd₁, hf⟩ := hf
-  obtain ⟨c₂, d₂, hc₂, hd₂, hg⟩ := hg
-  exact ⟨max c₁ c₂, d₁ + d₂, le_max_of_le_left hc₁, by linarith, fun n => by
-    calc |f n + g n|
-        ≤ |f n| + |g n| := abs_add _ _
-      _ ≤ (↑n ^ c₁ + d₁) + (↑n ^ c₂ + d₂) := by linarith [hf n, hg n]
-      _ ≤ (↑n ^ max c₁ c₂ + d₁) + (↑n ^ max c₁ c₂ + d₂) := by
-          sorry -- requires monotonicity of rpow
-      _ = ↑n ^ max c₁ c₂ + ↑n ^ max c₁ c₂ + (d₁ + d₂) := by ring
-      _ ≤ 2 * ↑n ^ max c₁ c₂ + (d₁ + d₂) := by ring_nf
-      _ ≤ ↑n ^ (max c₁ c₂ + 1) + (d₁ + d₂) := by sorry⟩
+  sorry
 
 /--
 The product of two poly-bounded functions is poly-bounded.
 (Fact 2.6(ii) in Boneh-Shoup)
 -/
-theorem PolyBounded.mul {f g : ℕ → ℝ} (hf : PolyBounded f) (hg : PolyBounded g) :
+theorem PolyBounded.mul {f g : ℕ → ℝ} (_hf : PolyBounded f) (_hg : PolyBounded g) :
     PolyBounded (fun n => f n * g n) := by
   sorry
 
@@ -112,7 +102,7 @@ theorem PolyBounded.mul {f g : ℕ → ℝ} (hf : PolyBounded f) (hg : PolyBound
 A poly-bounded function times a negligible function is negligible.
 (Fact 2.6(iii) in Boneh-Shoup)
 -/
-theorem PolyBounded.mul_negligible {f g : ℕ → ℝ} (hf : PolyBounded f) (hg : Negligible g) :
+theorem PolyBounded.mul_negligible {f g : ℕ → ℝ} (_hf : PolyBounded f) (_hg : Negligible g) :
     Negligible (fun n => f n * g n) := by
   sorry
 
@@ -124,11 +114,7 @@ filter-based formulation.
 -/
 theorem negligible_iff_forall_pow_tendsto_zero (f : ℕ → ℝ) :
     Negligible f ↔
-      ∀ k : ℕ, Filter.Tendsto (fun n => f n * (n : ℝ) ^ k) Filter.atTop (nhds 0) := by
-  constructor
-  · intro hf k
-    exact hf k
-  · intro h k
-    exact h k
+      ∀ k : ℕ, Filter.Tendsto (fun n : ℕ => (n : ℝ) ^ k * f n) Filter.atTop (nhds 0) :=
+  Iff.rfl
 
 end Cslib.Crypto
