@@ -7,6 +7,8 @@ Authors: Christiano Braga
 module
 
 public import Cslib.Crypto.Foundations.Advantage
+-- TODO: uncomment once toolchains align (VCVio @ v4.28.0, CSLib @ v4.29.0-rc2)
+-- public import VCVio.CryptoFoundations.AsymmEncAlg
 
 /-!
 # Key Encapsulation Mechanism (KEM) and IND-CCA2 Security
@@ -36,11 +38,31 @@ under MLWE would be stated as an axiom instantiating this framework.
 - `Cslib.Crypto.KEMCCAAdversary` — adversary for the IND-CCA2 game
 - `Cslib.Crypto.KEMINDCCA2Secure` — IND-CCA2 security for KEMs
 
+## Cross-references with VCVio
+
+| Cslib definition | VCVio equivalent |
+|-----------------|-----------------|
+| `Cslib.Crypto.PKEScheme` | `VCVio.AsymmEncAlg` (probabilistic, over `OracleComp`) |
+| `Cslib.Crypto.CPAAdversary` | `VCVio.IND_CPA_Adv` (two-phase, probabilistic) |
+| `Cslib.Crypto.CCAAdversary` | `VCVio.IND_CCA_Adversary` (with decryption oracle) |
+| `Cslib.Crypto.INDCPASecure` | `VCVio.IND_CPA_advantage` + `VCVio.negligible` |
+| `Cslib.Crypto.INDCCASecure` | `VCVio.IND_CCA_Advantage` + `VCVio.negligible` |
+| `Cslib.Crypto.KEMScheme` | `VCVio.CryptoFoundations.KeyEncapMech` (skeleton only) |
+| `Cslib.Crypto.ind_cca_implies_ind_cpa` | (not yet in VCVio) |
+
+VCVio's `AsymmEncAlg` is parameterized by a monad `m` (typically `ProbComp`),
+supporting probabilistic encryption and decryption. Our `PKEScheme` is
+deterministic (randomness is explicit). For concrete security proofs with
+probability, use VCVio's IND-CPA/CCA games.
+
+VCVio's `KeyEncapMech.lean` is a skeleton — our `KEMScheme` is more complete.
+
 ## References
 
 - [NIST FIPS 203, *Module-Lattice-Based Key-Encapsulation Mechanism Standard*](https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.203.ipd.pdf)
 - [Boneh and Shoup, *A Graduate Course in Applied Cryptography*, Ch. 12]
 - [Signal, *The PQXDH Key Agreement Protocol*](https://signal.org/docs/specifications/pqxdh/)
+- [VCVio.CryptoFoundations.AsymmEncAlg](https://github.com/Verified-zkEVM/VCV-io)
 -/
 
 @[expose] public section

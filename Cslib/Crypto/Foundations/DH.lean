@@ -7,6 +7,8 @@ Authors: Christiano Braga
 module
 
 public import Cslib.Crypto.Foundations.Advantage
+-- TODO: uncomment once toolchains align (VCVio @ v4.28.0, CSLib @ v4.29.0-rc2)
+-- public import VCVio.CryptoFoundations.HardnessAssumptions.DiffieHellman
 
 /-!
 # Diffie-Hellman Groups and Hardness Assumptions
@@ -41,6 +43,22 @@ assumption is stronger and used in some analyses.
 ## Main results
 
 - `Cslib.Crypto.ddh_implies_cdh` — DDH hardness implies CDH hardness
+
+## Cross-references with VCVio
+
+| Cslib definition | VCVio equivalent |
+|-----------------|-----------------|
+| `Cslib.Crypto.DHGroup` | Hard Homogeneous Spaces (`AddTorsor G P`) |
+| `Cslib.Crypto.CDHAdversary` | `VCVio.CDHAdversary` (via `parallelizationAdversary`) |
+| `Cslib.Crypto.DDHAdversary` | `VCVio.DDHAdversary` (via `parallelTestingAdversary`) |
+| `Cslib.Crypto.CDHSecure` | `VCVio.cdhExp` + `VCVio.negligible` |
+| `Cslib.Crypto.DDHSecure` | `VCVio.ddhAdvantage` + `VCVio.negligible` |
+| (none) | `VCVio.DLogAdversary`, `VCVio.dlogExp` (discrete log) |
+
+VCVio models DH groups via Mathlib's `AddTorsor` abstraction (hard homogeneous
+spaces), which generalizes to any group action. Our `DHGroup` is a simpler
+interface for protocol-level specifications. For concrete security proofs,
+use VCVio's probabilistic adversaries.
 
 ## References
 

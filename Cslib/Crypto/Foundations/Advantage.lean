@@ -7,6 +7,8 @@ Authors: Christiano Braga
 module
 
 public import Cslib.Crypto.Foundations.Negligible
+-- TODO: uncomment once toolchains align (VCVio @ v4.28.0, CSLib @ v4.29.0-rc2)
+-- public import VCVio.CryptoFoundations.SecExp
 
 /-!
 # Advantage Framework
@@ -19,14 +21,25 @@ scheme. The advantage is parameterized by the security parameter `κ`.
 
 ## Cryptographic model
 
-**Axiomatic.** The advantage is an abstract function `Adversary → ℕ → ℕ`
-mapping each adversary and security parameter to a natural number (numerator).
-A separate denominator function normalizes the fraction. Security means the
-advantage is negligible for all efficient adversaries.
+**Hybrid: axiomatic ℕ encoding + VCVio's probabilistic framework.**
 
-This follows **approach #1** from the taxonomy of cryptographic formalization
-strategies: hardness assumptions are axioms, and security reductions are
-proved symbolically without computing concrete probabilities.
+We provide two formulations:
+- `Cslib.Crypto.Advantage` / `Cslib.Crypto.Secure` — lightweight ℕ encoding
+  with cross-multiplied negligibility, suitable for symbolic reductions.
+- `VCVio.SecExp` / `VCVio.SecAdv` (re-exported) — probabilistic security
+  experiments with `ProbComp`-based advantage computation over `ℝ≥0∞`.
+
+## Cross-references with VCVio
+
+| Cslib definition | VCVio equivalent |
+|-----------------|-----------------|
+| `Cslib.Crypto.Advantage` | `VCVio.SecExp` (security experiment) + `ProbComp.advantage` |
+| `Cslib.Crypto.Secure` | `VCVio.SecExp.advantage` composed with `VCVio.negligible` |
+
+The VCVio framework is strictly more expressive: it supports probabilistic
+adversaries via `OracleComp`, oracle query tracking, and advantage computation
+over real-valued distributions. Our `Advantage`/`Secure` is a lightweight
+wrapper for symbolic proofs.
 
 ## Main definitions
 
@@ -37,6 +50,7 @@ proved symbolically without computing concrete probabilities.
 
 - [Katz and Lindell, *Introduction to Modern Cryptography*, §3.2]
 - [Boneh and Shoup, *A Graduate Course in Applied Cryptography*, §2.4]
+- [VCVio.CryptoFoundations.SecExp](https://github.com/Verified-zkEVM/VCV-io)
 -/
 
 @[expose] public section
@@ -45,7 +59,10 @@ namespace Cslib.Crypto
 
 /-- An advantage function bundles a numerator `adv` (mapping adversary and
     security parameter to a natural number) and a denominator `denom`. The
-    actual advantage is `adv(A, κ) / denom(κ)`. -/
+    actual advantage is `adv(A, κ) / denom(κ)`.
+
+    For probabilistic advantage computation, use `VCVio.SecExp` with
+    `ProbComp.advantage` instead. -/
 structure Advantage (Adversary : Type*) where
   /-- Advantage numerator: maps adversary and security parameter to ℕ. -/
   adv : Adversary → Nat → Nat

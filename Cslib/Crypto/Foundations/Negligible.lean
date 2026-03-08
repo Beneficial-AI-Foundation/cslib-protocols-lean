@@ -7,6 +7,8 @@ Authors: Christiano Braga
 module
 
 public import Cslib.Init
+-- TODO: uncomment once toolchains align (VCVio @ v4.28.0, CSLib @ v4.29.0-rc2)
+-- public import VCVio.CryptoFoundations.Asymptotics.Negligible
 
 /-!
 # Negligible Functions
@@ -20,15 +22,25 @@ polynomial-time magnification can make it significant.
 
 ## Cryptographic model
 
-**Axiomatic / symbolic.** We work over `ℕ` rather than `ℝ` to avoid dependence
-on Mathlib's real number library. Division is avoided by cross-multiplying:
-instead of `f(κ) ≤ 1/κᶜ`, we check `f(κ) · κᶜ ≤ 1`. Over the naturals this
-forces `f(κ) = 0` for all sufficiently large `κ`.
+**Hybrid: axiomatic ℕ encoding + VCVio's probabilistic definition.**
+
+We provide two formulations:
+- `Cslib.Crypto.Negligible` — cross-multiplied form over `ℕ`, suitable for
+  lightweight proofs without Mathlib reals.
+- `VCVio.negligible` (re-exported) — the standard definition over `ℝ≥0∞`
+  via Mathlib's `SuperpolynomialDecay`, suitable for composing with VCVio's
+  oracle computation framework and probabilistic security games.
+
+## Cross-references with VCVio
+
+| Cslib definition | VCVio equivalent |
+|-----------------|-----------------|
+| `Cslib.Crypto.Negligible` | `VCVio.negligible` (`ℕ → ℝ≥0∞`, via `SuperpolynomialDecay`) |
+| `Cslib.Crypto.negligible_zero` | `VCVio.negligible_zero` |
 
 ## Main definitions
 
-- `Cslib.Crypto.Negligible` — a function `ℕ → ℕ` is negligible
-- `Cslib.Crypto.NegligibleR` — a function `ℕ → ℝ` is negligible (axiomatized)
+- `Cslib.Crypto.Negligible` — a function `ℕ → ℕ` is negligible (ℕ encoding)
 
 ## Main results
 
@@ -39,22 +51,21 @@ forces `f(κ) = 0` for all sufficiently large `κ`.
 - [Katz and Lindell, *Introduction to Modern Cryptography*, §3.2]
 - [Boneh and Shoup, *A Graduate Course in Applied Cryptography*, §2.3]
 - [Rosulek, *The Joy of Cryptography*, §2.3]
+- [VCVio.CryptoFoundations.Asymptotics.Negligible](https://github.com/Verified-zkEVM/VCV-io)
 -/
 
 @[expose] public section
 
 namespace Cslib.Crypto
 
+/-! ### Lightweight ℕ encoding (no Mathlib reals) -/
+
 /-- A function `f : ℕ → ℕ` is **negligible** if for every polynomial degree `c`,
     there exists a threshold `κ₀` past which `f(κ) · κᶜ ≤ 1`.
 
-    This is the cross-multiplied form of `f(κ) ≤ 1/κᶜ`, avoiding division. -/
+    This is the cross-multiplied form of `f(κ) ≤ 1/κᶜ`, avoiding division.
+    For the standard ℝ≥0∞ formulation, use `VCVio.negligible`. -/
 def Negligible (f : Nat → Nat) : Prop :=
-  ∀ (c : Nat), ∃ (κ₀ : Nat), ∀ (κ : Nat), κ ≥ κ₀ → f κ * κ ^ c ≤ 1
-
-/-- A function `f : ℕ → ℝ` is **negligible** in the standard sense.
-    This is axiomatized — we state the definition but do not construct reals. -/
-def NegligibleR (f : Nat → Nat) : Prop :=
   ∀ (c : Nat), ∃ (κ₀ : Nat), ∀ (κ : Nat), κ ≥ κ₀ → f κ * κ ^ c ≤ 1
 
 /-- The zero function is negligible. -/

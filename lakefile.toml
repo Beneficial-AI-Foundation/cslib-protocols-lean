@@ -17,6 +17,12 @@ weak.linter.allScriptsDocumented = false
 name = "mathlib"
 scope = "leanprover-community"
 
+# TODO: uncomment once toolchains align (VCVio @ v4.28.0, CSLib @ v4.29.0-rc2)
+# [[require]]
+# name = "VCVio"
+# git = "https://github.com/Verified-zkEVM/VCV-io.git"
+# rev = "f658ff15875ca2ad88c662073ced420fdde5640a"
+
 [[lean_lib]]
 name = "Cslib"
 globs = ["Cslib.*"]

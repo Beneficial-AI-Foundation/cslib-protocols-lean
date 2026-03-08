@@ -7,29 +7,43 @@ SPQR) to protocol composition and implementation correctness.
 
 ## Cryptographic model
 
-The formalization uses an **axiomatic** approach (approach #1 in the taxonomy
-below). The key design choices are:
+The formalization uses a **hybrid** approach combining two layers:
+
+| Layer | Model | Source |
+|-------|-------|--------|
+| **Protocol specifications** | Axiomatic — abstract advantage over ℕ, symbolic reductions | Cslib.Crypto |
+| **Security games & proofs** | Probabilistic — `OracleComp` monad, `ProbComp`, ℝ≥0∞ advantage | [VCVio](https://github.com/Verified-zkEVM/VCV-io) |
+
+### Layer 1: Axiomatic (Cslib.Crypto)
 
 | Aspect | Choice |
 |--------|--------|
 | **Advantage** | Abstract function `Adversary → ℕ → ℕ` (numerator + denominator) |
-| **Negligibility** | Cross-multiplied: `f(κ) · κᶜ ≤ 1` over ℕ (avoids ℝ / Mathlib) |
+| **Negligibility** | Cross-multiplied: `f(κ) · κᶜ ≤ 1` over ℕ |
 | **Hardness assumptions** | Stated as axioms (CDH, DDH, MLWE, PRF security) |
 | **Security reductions** | Proved symbolically via advantage bounds |
-| **Probability** | Not modeled directly — advantage is axiomatized |
-| **Adversaries** | Deterministic structures (no probabilistic monad) |
+| **Adversaries** | Deterministic structures |
 
-This is a **symbolic / axiomatic** model, not a probabilistic one. It mirrors
-how pen-and-paper cryptographic proofs work: hardness assumptions are axioms,
-and security reductions compose advantage bounds. The model is sound for
-stating and connecting security properties, but does not compute concrete
-advantage values or model probabilistic adversaries.
+### Layer 2: Probabilistic (VCVio)
 
-### Alternative approaches (not yet implemented)
+| Aspect | Choice |
+|--------|--------|
+| **Advantage** | `ProbComp.advantage` over ℝ≥0∞ with `OracleComp` |
+| **Negligibility** | `SuperpolynomialDecay` via Mathlib |
+| **Hardness assumptions** | CDH, DDH, DLog, LWE with probabilistic experiments |
+| **Security games** | IND-CPA, IND-CCA with oracle tracking, query bounds |
+| **Adversaries** | Probabilistic (`OracleComp`-based), with query-bounded `SecAdv` |
 
-1. **Axiomatized advantage** — current implementation
-2. **Lightweight PMF monad** — composable probability over `Fintype` (requires Mathlib's `PMF`)
-3. **CryptHOL/SSProve-style framework** — full game-based proofs with oracles (no Lean 4 framework exists yet)
+VCVio is added as a Lake dependency. The foundation files import and
+cross-reference VCVio definitions. For protocol-level specifications
+(PQXDH, Double Ratchet, SPQR), we use the axiomatic layer. For concrete
+security reductions, VCVio's probabilistic framework should be used.
+
+### Approaches taxonomy
+
+1. **Axiomatized advantage** — our Layer 1 (lightweight, no Mathlib reals)
+2. **VCVio oracle computation** — our Layer 2 (probabilistic, full Mathlib)
+3. **CryptHOL/SSProve-style framework** — not yet available for Lean 4
 
 ## File structure
 
@@ -159,6 +173,32 @@ This level targets the Aeneas/Charon pipeline: Rust → Lean extraction → equa
 - Negligible function closure properties (addition, polynomial multiplication)
 - DDH → CDH reduction
 - Implementation correctness bridge
+
+## Cross-references with VCVio
+
+The following table maps Cslib.Crypto definitions to their VCVio equivalents.
+VCVio definitions are imported via `public import` in the foundation files.
+
+| Cslib.Crypto | VCVio | Notes |
+|-------------|-------|-------|
+| `Negligible` (ℕ) | `VCVio.negligible` (ℝ≥0∞) | VCVio uses `SuperpolynomialDecay` from Mathlib |
+| `Advantage`, `Secure` | `SecExp`, `SecAdv`, `ProbComp.advantage` | VCVio is probabilistic with oracle tracking |
+| `DHGroup` | Hard Homogeneous Spaces (`AddTorsor`) | VCVio generalizes via group actions |
+| `CDHAdversary`, `CDHSecure` | `CDHAdversary`, `cdhExp` | VCVio uses `ProbComp` |
+| `DDHAdversary`, `DDHSecure` | `DDHAdversary`, `ddhAdvantage` | VCVio uses `ProbComp` |
+| (none) | `DLogAdversary`, `dlogExp` | Discrete log — only in VCVio |
+| `PKEScheme` | `AsymmEncAlg` | VCVio is monadic (`m : Type → Type`) |
+| `CPAAdversary`, `INDCPASecure` | `IND_CPA_Adv`, `IND_CPA_advantage` | VCVio has full game + hybrid argument |
+| `CCAAdversary`, `INDCCASecure` | `IND_CCA_Adversary`, `IND_CCA_Advantage` | VCVio tracks forbidden queries |
+| `KEMScheme`, `KEMINDCCA2Secure` | `KeyEncapMech` (skeleton) | **Cslib is more complete** |
+| `AEADScheme`, AEAD security | (none) | **Only in Cslib** |
+| `KDF`, `PRF`, PRF security | (none) | **Only in Cslib** |
+| (none) | `SymmEncAlg`, `perfectSecrecy` | Symmetric encryption — only in VCVio |
+| (none) | `SignatureAlg`, EUF-CMA | Digital signatures — only in VCVio |
+| (none) | `SigmaProtocol`, HVZK | Sigma protocols — only in VCVio |
+| (none) | `FiatShamir` | Fiat-Shamir transform — only in VCVio |
+| (none) | `LWE.Distr`, `LWE.UniformDistr` | LWE hardness — only in VCVio |
+| (none) | `OracleComp`, `ProbComp` | Oracle computation framework — only in VCVio |
 
 ## Dependency graph
 
